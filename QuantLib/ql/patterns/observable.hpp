@@ -3,7 +3,7 @@
 /*
  Copyright (C) 2000, 2001, 2002, 2003 RiskMap srl
  Copyright (C) 2003, 2004, 2005, 2006 StatPro Italia srl
- Copyright (C) 2011, 2012 Ferdinando Ametrano
+ Copyright (C) 2011 Ferdinando Ametrano
 
  This file is part of QuantLib, a free-software/open-source library
  for financial quantitative analysts and developers - http://quantlib.org/
@@ -29,6 +29,8 @@
 #include <ql/errors.hpp>
 #include <ql/types.hpp>
 
+#include <boost/bind.hpp>
+#include <boost/signals2.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include <set>
@@ -52,10 +54,10 @@ namespace QuantLib {
         */
         void notifyObservers();
       private:
-        typedef std::set<Observer*>::iterator iterator;
-        std::pair<iterator, bool> registerObserver(Observer*);
-        Size unregisterObserver(Observer*);
-        std::set<Observer*> observers_;
+        typedef boost::signals2::signal<void ()> signal_type;
+        signal_type sig_;
+        boost::signals2::connection registerObserver(Observer*);
+        void unregisterObserver(Observer*);
     };
 
     //! Object that gets notified when a given observable changes
@@ -76,8 +78,7 @@ namespace QuantLib {
             instead, it will be called by the observables the instance
             registered with when they need to notify any changes.
         */
-        void unregisterWithAll();
-        virtual void update() = 0;
+        virtual void update() {};
       private:
         std::set<boost::shared_ptr<Observable> > observables_;
         typedef std::set<boost::shared_ptr<Observable> >::iterator iterator;
@@ -107,39 +108,19 @@ namespace QuantLib {
         return *this;
     }
 
-    inline std::pair<std::set<Observer*>::iterator, bool>
-    Observable::registerObserver(Observer* o) {
-        return observers_.insert(o);
+    
+    inline
+    boost::signals2::connection Observable::registerObserver(Observer* o) {
+        return sig_.connect(signal_type::slot_type(&Observer::update, o));
     }
 
-    inline Size Observable::unregisterObserver(Observer* o) {
-        return observers_.erase(o);
+    inline void Observable::unregisterObserver(Observer* o) {
+        sig_.disconnect(boost::bind(&Observer::update, o));
     }
 
     inline void Observable::notifyObservers() {
-        bool successful = true;
-        std::string errMsg;
-        for (iterator i=observers_.begin(); i!=observers_.end(); ++i) {
-            try {
-                (*i)->update();
-            } catch (std::exception& e) {
-                // quite a dilemma. If we don't catch the exception,
-                // other observers will not receive the notification
-                // and might be left in an incorrect state. If we do
-                // catch it and continue the loop (as we do here) we
-                // lose the exception. The least evil might be to try
-                // and notify all observers, while raising an
-                // exception if something bad happened.
-                successful = false;
-                errMsg = e.what();
-            } catch (...) {
-                successful = false;
-            }
-        }
-        QL_ENSURE(successful,
-                  "could not notify one or more observers: " << errMsg);
+        sig_();
     }
-
 
     inline Observer::Observer(const Observer& o)
     : observables_(o.observables_) {
@@ -176,12 +157,6 @@ namespace QuantLib {
         if (h)
             h->unregisterObserver(this);
         return observables_.erase(h);
-    }
-
-    inline void Observer::unregisterWithAll() {
-        for (iterator i=observables_.begin(); i!=observables_.end(); ++i)
-            (*i)->unregisterObserver(this);
-        observables_.clear();
     }
 
 }
