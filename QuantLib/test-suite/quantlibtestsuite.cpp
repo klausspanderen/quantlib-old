@@ -257,6 +257,7 @@ test_suite* init_unit_test_suite(int, char* []) {
     test->add(ArrayTest::suite());
     test->add(AsianOptionTest::suite());
     test->add(AssetSwapTest::suite()); // fails with QL_USE_INDEXED_COUPON
+    test->add(AutocovariancesTest::suite());
     test->add(BarrierOptionTest::suite());
     test->add(BasketOptionTest::suite());
     test->add(BatesModelTest::suite());
@@ -283,6 +284,7 @@ test_suite* init_unit_test_suite(int, char* []) {
     test->add(EuropeanOptionTest::suite());
     test->add(ExchangeRateTest::suite());
     test->add(FactorialTest::suite());
+    test->add(FastFourierTransformTest::suite());
     test->add(FdHestonTest::suite());
     test->add(FdmLinearOpTest::suite());
     test->add(ForwardOptionTest::suite());
@@ -346,7 +348,6 @@ test_suite* init_unit_test_suite(int, char* []) {
 
     // tests for experimental classes
     test->add(AsianOptionTest::experimental());
-    test->add(AutocovariancesTest::suite());
     test->add(BarrierOptionTest::experimental());
     test->add(BlackDeltaCalculatorTest::suite());
     test->add(CdoTest::suite());
@@ -358,7 +359,6 @@ test_suite* init_unit_test_suite(int, char* []) {
     test->add(EuropeanOptionTest::experimental());
     test->add(EverestOptionTest::suite());
     test->add(ExtendedTreesTest::suite());
-    test->add(FastFourierTransformTest::suite());
     test->add(FdHestonTest::experimental());
     test->add(HimalayaOptionTest::suite());
     test->add(InflationCPICapFloorTest::suite());
