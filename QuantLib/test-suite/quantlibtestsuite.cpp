@@ -121,6 +121,7 @@
 #include "mersennetwister.hpp"
 #include "money.hpp"
 #include "nthtodefault.hpp"
+#include "observable.hpp"
 #include "ode.hpp"
 #include "operators.hpp"
 #include "optimizers.hpp"
@@ -374,6 +375,7 @@ test_suite* init_unit_test_suite(int, char* []) {
     test->add(VarianceOptionTest::suite());
     test->add(VPPTest::suite());
     test->add(WriterExtensibleOptionTest::suite());
+    test->add(ObservableTest::suite());
 
     // tests for deprecated classes
     test->add(LiborMarketModelTest::suite());

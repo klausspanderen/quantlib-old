@@ -8,7 +8,7 @@ else
 noinst_PROGRAMS = FRA
 endif
 FRA_SOURCES = FRA.cpp
-FRA_LDADD = ../../ql/libQuantLib.la -lboost_thread
+FRA_LDADD = ../../ql/libQuantLib.la -lboost_thread -lboost_system
 
 EXTRA_DIST = \
     FRA.dev \

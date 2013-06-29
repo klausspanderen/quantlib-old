@@ -8,7 +8,7 @@ else
 noinst_PROGRAMS = Repo
 endif
 Repo_SOURCES = Repo.cpp
-Repo_LDADD = ../../ql/libQuantLib.la -lboost_thread
+Repo_LDADD = ../../ql/libQuantLib.la -lboost_thread -lboost_system
 
 EXTRA_DIST = \
     Repo.dev \

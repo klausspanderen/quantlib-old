@@ -8,7 +8,7 @@ else
 noinst_PROGRAMS = Bonds
 endif
 Bonds_SOURCES = Bonds.cpp
-Bonds_LDADD = ../../ql/libQuantLib.la -lboost_thread
+Bonds_LDADD = ../../ql/libQuantLib.la -lboost_thread -lboost_system
 
 EXTRA_DIST = \
     Bonds.dev \

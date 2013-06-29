@@ -8,7 +8,7 @@ else
 noinst_PROGRAMS = Replication
 endif
 Replication_SOURCES = Replication.cpp
-Replication_LDADD = ../../ql/libQuantLib.la -lboost_thread
+Replication_LDADD = ../../ql/libQuantLib.la -lboost_thread -lboost_system
 
 EXTRA_DIST = \
     Replication.dev \

@@ -8,7 +8,7 @@ else
 noinst_PROGRAMS = DiscreteHedging
 endif
 DiscreteHedging_SOURCES = DiscreteHedging.cpp
-DiscreteHedging_LDADD = ../../ql/libQuantLib.la -lboost_thread
+DiscreteHedging_LDADD = ../../ql/libQuantLib.la -lboost_thread -lboost_system
 
 EXTRA_DIST = \
     DiscreteHedging.dev \
