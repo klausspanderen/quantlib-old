@@ -268,6 +268,20 @@ if test "$ql_use_tss" = "yes" ; then
 fi
 AC_MSG_RESULT([$ql_use_tss])
 
+AC_MSG_CHECKING([whether to enable thread-safe observer pattern])
+AC_ARG_ENABLE([thread-safe-observer-pattern],
+              AC_HELP_STRING([--enable-thread-safe-observer-pattern],
+                             [If enabled, a thread safe observer pattern will
+                              be used.]),
+              [ql_use_tsop=$enableval],
+              [ql_use_tsop=yes])
+if test "$ql_use_tsop" = "yes" ; then
+   AC_DEFINE([QL_ENABLE_THREAD_SAFE_OBSERVER_PATTERN],[1],
+             [Define this if you want to enable thread-safe observer pattern.])
+fi
+AC_MSG_RESULT([$ql_use_tsop])
+
+
 AC_MSG_CHECKING([whether to install examples])
 AC_ARG_ENABLE([examples],
               AC_HELP_STRING([--enable-examples],

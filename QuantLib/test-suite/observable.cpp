@@ -25,8 +25,6 @@
 
 #include <boost/thread.hpp>
 
-#include <stdio.h>
-
 using namespace QuantLib;
 using namespace boost::unit_test_framework;
 
@@ -38,8 +36,9 @@ namespace {
     class B : public Observer {
       public:
         B() { b = (double*) malloc(1024); }
-        ~B() { free(b); }
-        void update() {  }
+        ~B() {free(b);
+        }
+        void update() { }
         
     private:
         double* b;
@@ -54,7 +53,7 @@ namespace {
         void operator()() {
             for (Size i=0; i < 1000000; ++i) {
                 const Size nextObservable
-                    = urng_.next().value * observables_.size();
+                    = Size(urng_.next().value * observables_.size());
                 observables_[nextObservable]->notifyObservers();
             }
         }
@@ -70,20 +69,21 @@ namespace {
             const std::vector<boost::shared_ptr<Observable> >& observables)
         : urng_(4567ul),
           observer_(observer),
-          observables_(observables) {}
+          observables_(observables) {
+        }
 
         void operator()() {
             for (Size i=0; i < 1000000; ++i) {
                 const Size nextObserver
-                    = urng_.next().value * observer_.size();
+                    = Size(urng_.next().value * observer_.size());
                 const boost::shared_ptr<Observer> anObserver(new B);
                 observer_[nextObserver] = anObserver;
 
                 for (Size j=0; j < 5; ++j) {
                     const Size nextObserver
-                        = urng_.next().value * observer_.size();
+                        = Size(urng_.next().value * observer_.size());
                     const Size nextObservable
-                        = urng_.next().value * observables_.size();
+                        = Size(urng_.next().value * observables_.size());
 
                     observer_[nextObserver]
                           ->registerWith(observables_[nextObservable]);
@@ -98,28 +98,27 @@ namespace {
     };
 }
 
-// enable thread-safe observer pattern
-namespace boost {
-  namespace detail {
-    template<>
-    inline void sp_counted_impl_p<B>::dispose() {
-      px_->deactivate();
-      checked_delete( px_ );
-    }
-  }
+void ObservableTest::testSimpleCall() {
+    BOOST_TEST_MESSAGE("Testing Simple Call...");
+
+    boost::shared_ptr<Observable> observable(new A);
+    boost::shared_ptr<Observer> observer(new B);
+
+    observer->registerWith(observable);
+    observable->notifyObservers();
 }
 
 void ObservableTest::testMultiThreadingObservableStress() {
     BOOST_TEST_MESSAGE("Testing Multi Threading observable pattern...");
 
     const Size nObserver = 100;
-    const Size nObservables = 100;
+    const Size nObservables = 500;
 
-    std::vector<boost::shared_ptr<Observable> > observables(100);
+    std::vector<boost::shared_ptr<Observable> > observables(nObservables);
     for (Size i=0; i < nObservables; ++i) {
         observables[i] = boost::shared_ptr<Observable>(new A);
     }
-    std::vector<boost::shared_ptr<Observer> > observer(100);
+    std::vector<boost::shared_ptr<Observer> > observer(nObserver);
     for (Size i=0; i < nObserver; ++i) {
         observer[i] = boost::shared_ptr<Observer>(new B);
     }
@@ -140,10 +139,21 @@ void ObservableTest::testMultiThreadingObservableStress() {
     notifierWorker4.join();
 }
 
+void ObservableTest::testDirectInstantiation() {
+    BOOST_TEST_MESSAGE("Testing Multi Threading observable pattern...");
+
+    boost::shared_ptr<Observable> observable(new A);
+    Observer Observer;
+
+    Observer.registerWith(observable);
+    observable->notifyObservers();
+}
+
 test_suite* ObservableTest::suite() {
     test_suite* suite = BOOST_TEST_SUITE("Observable tests");
-
-    suite->add(QUANTLIB_TEST_CASE(
-        &ObservableTest::testMultiThreadingObservableStress));
+//    suite->add(QUANTLIB_TEST_CASE(&ObservableTest::testSimpleCall));
+//    suite->add(QUANTLIB_TEST_CASE(
+//        &ObservableTest::testMultiThreadingObservableStress));
+    suite->add(QUANTLIB_TEST_CASE(&ObservableTest::testDirectInstantiation));
     return suite;
 }

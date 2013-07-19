@@ -83,4 +83,9 @@
 #define QL_ENABLE_TSS
 #endif
 
+/* Define this to use a thread-safe observer pattern. */
+#ifndef QL_ENABLE_THREAD_SAFE_OBSERVER_PATTERN
+#define QL_ENABLE_THREAD_SAFE_OBSERVER_PATTERN
+#endif
+
 #endif

@@ -670,7 +670,7 @@ namespace {
             payoffTimesDensity[i] = payoff->operator()(std::exp(x[i]))*p[i];
         }
 
-        const CubicNaturalSpline f(x.begin(), x.end(),
+        const MonotonicCubicNaturalSpline f(x.begin(), x.end(),
                                    payoffTimesDensity.begin());
         return GaussLobattoIntegral(1000, 1e-6)(f, x.front(), x.back());
     }
@@ -841,7 +841,7 @@ namespace {
 void FdHestonTest::testSquareRootZeroFlowBC() {
     #if BOOST_VERSION >= 103900
 
-    BOOST_MESSAGE("Testing Zero Flow BC for the square root process...");
+    BOOST_TEST_MESSAGE("Testing Zero Flow BC for the square root process...");
 
     SavedSettings backup;
 
@@ -930,7 +930,7 @@ namespace {
 
 
 void FdHestonTest::testTransformedZeroFlowBC() {
-    BOOST_MESSAGE("Testing zero flow BC for transformed "
+    BOOST_TEST_MESSAGE("Testing zero flow BC for transformed "
                   "Fokker-Planck forward equation...");
 
     SavedSettings backup;
@@ -979,23 +979,26 @@ namespace {
       public:
         q_fct(const Array& v, const Array& p, const Real alpha)
         : v_(v), q_(Pow(v, alpha)*p), alpha_(alpha) {
-            spline_ = boost::shared_ptr<CubicNaturalSpline>(
-                new CubicNaturalSpline(v_.begin(), v_.end(), q_.begin()));
+            spline_ = boost::shared_ptr<CubicInterpolation>(
+                new MonotonicCubicNaturalSpline(v_.begin(), v_.end(), 
+                                                q_.begin()));
         }
 
         Real operator()(Real v) {
-            return spline_->operator()(v)*std::pow(v, -alpha_);
+            const Real x = std::min(std::max(v, v_.front()*(1+1e-8)), 
+                                    v_.back()*(1-1e-8));
+            return spline_->operator()(x)*std::pow(v, -alpha_);
         }
       private:
 
         const Array v_, q_;
         const Real alpha_;
-        boost::shared_ptr<CubicNaturalSpline> spline_;
+        boost::shared_ptr<CubicInterpolation> spline_;
     };
 }
 
 void FdHestonTest::testSquareRootEvolveWithStationaryDensity() {
-    BOOST_MESSAGE("Testing Fokker-Planck forward equation "
+    BOOST_TEST_MESSAGE("Testing Fokker-Planck forward equation "
                   "for the square root process with stationary density...");
 
     // Documentation for this test case:
@@ -1027,7 +1030,6 @@ void FdHestonTest::testSquareRootEvolveWithStationaryDensity() {
             new FdmSquareRootFwdOp(mesher, kappa, theta,
                                    sigma, 0, sigma > 0.75));
 
-
         const Array eP = p;
 
         const Size n = 100;
@@ -1057,8 +1059,8 @@ void FdHestonTest::testSquareRootEvolveWithStationaryDensity() {
 void FdHestonTest::testSquareRootFokkerPlanckFwdEquation() {
     #if BOOST_VERSION >= 103900
 
-    BOOST_MESSAGE("Testing Fokker-Planck forward equation "
-                  "for the square root process with Dirac start...");
+    BOOST_TEST_MESSAGE("Testing Fokker-Planck forward equation "
+                       "for the square root process with Dirac start...");
 
     SavedSettings backup;
 
@@ -1154,13 +1156,13 @@ namespace {
                                              p.begin() + (i+1)*x.size(), 0.0);
 
             if (sum > 100*QL_EPSILON) {
-                const CubicNaturalSpline f(x.begin(), x.end(),
+                const MonotonicCubicNaturalSpline f(x.begin(), x.end(),
                                            p.begin()+i*x.size());
                 intX[i]=GaussLobattoIntegral(1000000, 1e-6)(f,x.front(),x.back());
             }
         }
 
-        const CubicNaturalSpline f(y.begin(), y.end(), intX.begin());
+        const MonotonicCubicNaturalSpline f(y.begin(), y.end(), intX.begin());
         return GaussLobattoIntegral(1000000, 1e-6)(f, y.front(), y.back());
     }
 }

@@ -28,12 +28,33 @@
 #include <ql/patterns/observable.hpp>
 #include <ql/time/daycounters/actual365fixed.hpp>
 #include <boost/test/unit_test.hpp>
+#include <boost/test/detail/unit_test_parameters.hpp>
 #include <boost/test/floating_point_comparison.hpp>
 #include <boost/function.hpp>
 #include <vector>
 #include <string>
 #include <numeric>
 #include <iomanip>
+
+#undef BOOST_ERROR
+#define BOOST_ERROR(A) BOOST_TEST_MESSAGE("BOOST_ERROR in file " << __FILE__ \
+	<< " at line "  << __LINE__ << "\n" << A);
+
+#undef BOOST_FAIL
+#define BOOST_FAIL(A) BOOST_TEST_MESSAGE("BOOST_FAIL in file " << __FILE__ \
+	<< " at line "  << __LINE__ << "\n" << A);
+
+#undef BOOST_CHECK_MESSAGE
+#define BOOST_CHECK_MESSAGE(A, B) \
+	if ((!A) && (boost::unit_test::log_successful_tests == boost::unit_test::runtime_config::log_level())) \
+		BOOST_TEST_MESSAGE("BOOST_CHECK_MESSAGE in file " \
+				  << __FILE__ << " at line "  << __LINE__ << "\n" << B);
+
+#undef BOOST_REQUIRE_MESSAGE
+#define BOOST_REQUIRE_MESSAGE(A, B) \
+	if ((!A) && (boost::unit_test::log_successful_tests == boost::unit_test::runtime_config::log_level())) \
+		BOOST_TEST_MESSAGE("BOOST_REQUIRE_MESSAGE in file " \
+				  << __FILE__ << " at line "  << __LINE__ << "\n" << B);
 
 // This makes it easier to use array literals (alas, no std::vector literals)
 #define LENGTH(a) (sizeof(a)/sizeof(a[0]))
@@ -75,7 +96,7 @@ namespace QuantLib {
             quantlib_test_case(F test) : test_(test) {}
             void operator()() const {
                 Date before = Settings::instance().evaluationDate();
-                BOOST_CHECK(true);
+                //BOOST_CHECK(true);
                 test_();
                 Date after = Settings::instance().evaluationDate();
                 if (before != after)

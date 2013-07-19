@@ -24,6 +24,8 @@
 
 class ObservableTest {
   public:
+    static void testSimpleCall();
+    static void testDirectInstantiation();
     static void testMultiThreadingObservableStress();
     static boost::unit_test_framework::test_suite* suite();
 };

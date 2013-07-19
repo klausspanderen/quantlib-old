@@ -18,10 +18,14 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
+
 #include <ql/types.hpp>
 #include <ql/settings.hpp>
 #include <ql/version.hpp>
-#include <boost/test/unit_test.hpp>
+
+#define BOOST_TEST_NO_MAIN 1
+#include <boost/test/included/unit_test.hpp>
+#include <boost/thread/thread.hpp>
 #include <boost/timer.hpp>
 
 /* Use BOOST_MSVC instead of _MSC_VER since some other vendors (Metrowerks,
@@ -29,7 +33,7 @@
 */
 #ifdef BOOST_MSVC
 #  include <ql/auto_link.hpp>
-#  define BOOST_LIB_NAME boost_unit_test_framework
+#  define BOOST_LIB_NAME boost_thread
 #  include <boost/config/auto_link.hpp>
 #  undef BOOST_LIB_NAME
 
@@ -121,7 +125,6 @@
 #include "mersennetwister.hpp"
 #include "money.hpp"
 #include "nthtodefault.hpp"
-#include "observable.hpp"
 #include "ode.hpp"
 #include "operators.hpp"
 #include "optimizers.hpp"
@@ -161,6 +164,7 @@
 #include "volatilitymodels.hpp"
 #include "vpp.hpp"
 #include "writerextensibleoption.hpp"
+#include "observable.hpp"
 
 #include <iostream>
 #include <iomanip>
@@ -248,16 +252,17 @@ test_suite* init_unit_test_suite(int, char* []) {
     BOOST_TEST_MESSAGE(rule);
     BOOST_TEST_MESSAGE(header);
     BOOST_TEST_MESSAGE(rule);
+
     test_suite* test = BOOST_TEST_SUITE("QuantLib test suite");
 
     test->add(QUANTLIB_TEST_CASE(startTimer));
     test->add(QUANTLIB_TEST_CASE(configure));
 
+    test->add(ObservableTest::suite());
     test->add(AmericanOptionTest::suite());
     test->add(ArrayTest::suite());
     test->add(AsianOptionTest::suite());
     test->add(AssetSwapTest::suite()); // fails with QL_USE_INDEXED_COUPON
-    test->add(AutocovariancesTest::suite());
     test->add(BarrierOptionTest::suite());
     test->add(BasketOptionTest::suite());
     test->add(BatesModelTest::suite());
@@ -284,7 +289,6 @@ test_suite* init_unit_test_suite(int, char* []) {
     test->add(EuropeanOptionTest::suite());
     test->add(ExchangeRateTest::suite());
     test->add(FactorialTest::suite());
-    test->add(FastFourierTransformTest::suite());
     test->add(FdHestonTest::suite());
     test->add(FdmLinearOpTest::suite());
     test->add(ForwardOptionTest::suite());
@@ -317,7 +321,7 @@ test_suite* init_unit_test_suite(int, char* []) {
     test->add(MoneyTest::suite());
     test->add(OperatorTest::suite());
     test->add(OptimizersTest::suite());
-    test->add(OptionletStripperTest::suite());
+//    test->add(OptionletStripperTest::suite());
     test->add(OvernightIndexedSwapTest::suite());
     test->add(PathGeneratorTest::suite());
     test->add(PeriodTest::suite());
@@ -348,6 +352,7 @@ test_suite* init_unit_test_suite(int, char* []) {
 
     // tests for experimental classes
     test->add(AsianOptionTest::experimental());
+    test->add(AutocovariancesTest::suite());
     test->add(BarrierOptionTest::experimental());
     test->add(BlackDeltaCalculatorTest::suite());
     test->add(CdoTest::suite());
@@ -359,12 +364,14 @@ test_suite* init_unit_test_suite(int, char* []) {
     test->add(EuropeanOptionTest::experimental());
     test->add(EverestOptionTest::suite());
     test->add(ExtendedTreesTest::suite());
+    test->add(FastFourierTransformTest::suite());
     test->add(FdHestonTest::experimental());
+
     test->add(HimalayaOptionTest::suite());
     test->add(InflationCPICapFloorTest::suite());
     test->add(InflationVolTest::suite());
     test->add(MargrabeOptionTest::suite());
-    test->add(MarkovFunctionalTest::suite());
+//    test->add(MarkovFunctionalTest::suite());
     test->add(NthToDefaultTest::suite());
     test->add(OdeTest::suite());
     test->add(PagodaOptionTest::suite());
@@ -375,8 +382,6 @@ test_suite* init_unit_test_suite(int, char* []) {
     test->add(VarianceOptionTest::suite());
     test->add(VPPTest::suite());
     test->add(WriterExtensibleOptionTest::suite());
-    test->add(ObservableTest::suite());
-
     // tests for deprecated classes
     test->add(LiborMarketModelTest::suite());
     test->add(LiborMarketModelProcessTest::suite());
@@ -384,4 +389,112 @@ test_suite* init_unit_test_suite(int, char* []) {
     test->add(QUANTLIB_TEST_CASE(stopTimer));
 
     return test;
+}
+
+class TestCaseRunner {
+  public:
+    TestCaseRunner(
+    	const boost::shared_ptr<std::map<test_unit::parent_id_t,
+    									  std::list<test_unit::id_t> > >& idMap)
+    : idMap_(idMap) {}
+
+    void operator()() {
+        while (true) {
+            std::list<test_unit::id_t> ids;
+            {
+                boost::lock_guard<boost::mutex> lock(mutex_);
+                if (!idMap_->empty()) {
+                	ids = idMap_->begin()->second;
+                    idMap_->erase(idMap_->begin());
+                }
+                else {
+                    return;
+                }
+            }
+            try {
+            	for (std::list<test_unit::id_t>::const_iterator
+            			iter = ids.begin(); iter != ids.end(); ++iter) {
+            		framework::get<test_case>(*iter).test_func()();
+            	}
+            }
+            catch (std::exception& e) {
+                std::cout << "exception: " << e.what() << std::endl;
+            }
+        }
+    }
+  private:
+    static boost::mutex mutex_;
+    const boost::shared_ptr<std::map<test_unit::parent_id_t,
+    								 std::list<test_unit::id_t> > > idMap_;
+};
+
+boost::mutex TestCaseRunner::mutex_;
+
+class test_case_collector : public test_tree_visitor {
+  public:
+    test_case_collector()
+    : idMap_(new std::map<test_unit::parent_id_t,
+    		  	  	      std::list<test_unit::id_t> >()){}
+
+    boost::shared_ptr<std::map<test_unit::parent_id_t,
+    						   std::list<test_unit::id_t> > > map() {
+    	return idMap_;
+    }
+
+  private:
+    void visit( test_case const& tc) {
+        if (tc.p_enabled) {
+        	(*idMap_)[tc.p_parent_id].push_back(tc.p_id);
+        }
+    }
+    bool test_suite_start( test_suite const& ts ) { return ts.p_enabled; }
+
+    const boost::shared_ptr<std::map<test_unit::parent_id_t,
+    								 std::list<test_unit::id_t> > > idMap_;
+};
+
+int main( int argc, char* argv[] )
+{
+    try {
+        framework::init(init_unit_test_suite, argc, argv );
+
+        test_case_collector tcc;
+        traverse_test_tree( framework::master_test_suite().p_id, tcc );
+
+        const size_t nThreads = boost::thread::hardware_concurrency();
+        std::vector<boost::shared_ptr<boost::thread> > workerThreads(nThreads);
+
+        for (size_t i=0; i < nThreads; ++i) {
+            workerThreads[i]
+                = boost::shared_ptr<boost::thread>(
+                      new boost::thread(TestCaseRunner(tcc.map())));
+        }
+        for (size_t i=0; i < nThreads; ++i) {
+            workerThreads[i]->join();
+        }
+
+        results_reporter::make_report();
+
+        return runtime_config::no_result_code()
+                    ? boost::exit_success
+                    : results_collector.results( framework::master_test_suite().p_id ).result_code();
+    }
+    catch( framework::nothing_to_test const& ) {
+        return boost::exit_success;
+    }
+    catch( framework::internal_error const& ex ) {
+        results_reporter::get_stream() << "Boost.Test framework internal error: " << ex.what() << std::endl;
+
+        return boost::exit_exception_failure;
+    }
+    catch( framework::setup_error const& ex ) {
+        results_reporter::get_stream() << "Test setup error: " << ex.what() << std::endl;
+
+        return boost::exit_exception_failure;
+    }
+    catch( ... ) {
+        results_reporter::get_stream() << "Boost.Test framework internal error: unknown reason" << std::endl;
+
+        return boost::exit_exception_failure;
+    }
 }

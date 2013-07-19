@@ -21,15 +21,51 @@
     \brief observer/observable pattern
 */
 
+#include <ql/qldefines.hpp>
+
+#ifdef QL_ENABLE_THREAD_SAFE_OBSERVER_PATTERN
+
 #include <ql/patterns/observable.hpp>
-#include <boost/thread/lock_guard.hpp>
+#include <boost/thread/locks.hpp>
+
+#if defined(BOOST_MSVC)
+	#pragma warning(disable: 4355)
+#endif
 
 namespace QuantLib {
-    class Observer::Proxy {
+	namespace {
+		boost::mutex* observerListMutex(new boost::mutex);
+		std::set<void*>* globalObserverList(new std::set<void*>);
+
+		void addObserverToGlobalList(void* observer) {
+			boost::lock_guard<boost::mutex> lock(*observerListMutex);
+			globalObserverList->insert(observer);
+		}
+
+		void eraseIfObserver(void* ptr, std::size_t size) {
+			boost::lock_guard<boost::mutex> lock(*observerListMutex);
+			const std::set<void*>::iterator iter
+				=  globalObserverList->lower_bound(ptr);
+
+			if (iter != globalObserverList->end()) {
+				char* p = static_cast<char*>(ptr);
+				if ((p+size) >= *iter) {
+					QuantLib::Observer* const observer
+						= static_cast<QuantLib::Observer*>(*iter);
+
+					observer->deactivate();
+					globalObserverList->erase(*iter);
+				}
+			}
+		}
+	}
+
+	class Observer::Proxy {
       public:
-        Proxy(Observer* observer)
+        Proxy(Observer* const observer)
         : active_(true),
           observer_(observer) {
+        	addObserverToGlobalList(observer_);
         }
         void update() const {
             boost::lock_guard<boost::mutex> lock(mutex_);
@@ -51,21 +87,28 @@ namespace QuantLib {
         Observer* const observer_;
     };
 
+    Observer::Observer() {}
+
     void Observer::deactivate() {
-        proxy_->deactivate();
+        boost::lock_guard<boost::mutex> lock(mutex_);
+        if (proxy_) {
+        	proxy_->deactivate();
+        }
     }
 
     bool Observer::isActive() const {
-        return proxy_->isActive();
-    }
-
-    Observer::Observer()
-    : proxy_(new Proxy(this)) {
+    	if (proxy_) {
+    		return proxy_->isActive();
+    	}
+    	return true;
     }
 
     std::pair<std::set<boost::shared_ptr<Observable> >::iterator, bool>
     Observer::registerWith(const boost::shared_ptr<Observable>& h) {
         boost::lock_guard<boost::mutex> lock(mutex_);
+        if (!proxy_) {
+        	proxy_.reset(new Proxy(this));
+        }
         if (h) {
             h->registerObserver(proxy_);
             return observables_.insert(h);
@@ -77,6 +120,8 @@ namespace QuantLib {
     Size Observer::unregisterWith(const boost::shared_ptr<Observable>& h) {
         boost::lock_guard<boost::mutex> lock(mutex_);
         if (h) {
+        	QL_REQUIRE(proxy_, "unregister called without a proxy");
+
             h->unregisterObserver(proxy_);
         }
 
@@ -85,7 +130,7 @@ namespace QuantLib {
 
     Observer::Observer(const Observer& o)
     : proxy_(new Proxy(this)) {
-        {
+        {       
             boost::lock_guard<boost::mutex> lock(o.mutex_);
             observables_ = o.observables_;
         }
@@ -95,6 +140,10 @@ namespace QuantLib {
 
     Observer& Observer::operator=(const Observer& o) {
         boost::lock_guard<boost::mutex> lock(mutex_);
+        if (!proxy_) {
+        	proxy_.reset(new Proxy(this));
+        }
+
         for (iterator i=observables_.begin(); i!=observables_.end(); ++i)
             (*i)->unregisterObserver(proxy_);
 
@@ -102,12 +151,15 @@ namespace QuantLib {
             boost::lock_guard<boost::mutex> lock(o.mutex_);
             observables_ = o.observables_;
         }
+
         for (iterator i=observables_.begin(); i!=observables_.end(); ++i)
             (*i)->registerObserver(proxy_);
         return *this;
     }
 
     Observer::~Observer() {
+    	eraseIfObserver(this, 0);
+
         for (iterator i=observables_.begin(); i!=observables_.end(); ++i)
             (*i)->unregisterObserver(proxy_);
     }
@@ -132,3 +184,14 @@ namespace QuantLib {
         sig_();
     }
 }
+
+namespace boost {
+    void sp_scalar_constructor_hook( void * px, std::size_t size, void * pn ) {
+    }
+
+    void sp_scalar_destructor_hook( void * px, std::size_t size, void * pn ){
+    	QuantLib::eraseIfObserver(px, size);
+    }
+}
+#endif
+

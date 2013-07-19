@@ -74,7 +74,7 @@
 
 #include <ql/types.hpp>
 #include <ql/version.hpp>
-#include <boost/test/unit_test.hpp>
+#include <boost/test/included/unit_test.hpp>
 #include <boost/timer.hpp>
 #include <iostream>
 #include <iomanip>

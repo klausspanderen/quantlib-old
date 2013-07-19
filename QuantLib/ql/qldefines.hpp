@@ -86,6 +86,10 @@
     #endif
 #endif
 
+// thread safe observer pattern
+#ifdef QL_ENABLE_THREAD_SAFE_OBSERVER_PATTERN
+	#define BOOST_SP_ENABLE_DEBUG_HOOKS_2
+#endif
 
 // ensure that needed math constants are defined
 #include <ql/mathconstants.hpp>

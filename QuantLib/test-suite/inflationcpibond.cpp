@@ -161,6 +161,10 @@ namespace {
                          ii->frequency(),ii->interpolated(), baseZeroRate,
                          Handle<YieldTermStructure>(yTS), helpers)));
         }
+
+        ~CommonVars() {
+        	cpiTS.linkTo(boost::shared_ptr<ZeroInflationTermStructure>());
+        }
     };
 
 }
