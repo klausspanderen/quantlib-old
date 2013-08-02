@@ -931,7 +931,11 @@ namespace {
 
 void FdHestonTest::testTransformedZeroFlowBC() {
     BOOST_TEST_MESSAGE("Testing zero flow BC for transformed "
+<<<<<<< HEAD
                   "Fokker-Planck forward equation...");
+=======
+                       "Fokker-Planck forward equation...");
+>>>>>>> 535c6592b062ece0dca267e4cb0d0e09396cdc7a
 
     SavedSettings backup;
 
@@ -999,7 +1003,7 @@ namespace {
 
 void FdHestonTest::testSquareRootEvolveWithStationaryDensity() {
     BOOST_TEST_MESSAGE("Testing Fokker-Planck forward equation "
-                  "for the square root process with stationary density...");
+                       "for the square root process with stationary density...");
 
     // Documentation for this test case:
     // http://www.spanderen.de/2013/05/04/fokker-planck-equation-feller-constraint-and-boundary-conditions/

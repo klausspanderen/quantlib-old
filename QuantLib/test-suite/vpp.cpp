@@ -932,6 +932,7 @@ void VPPTest::testKlugeExtOUMatrixDecomposition() {
                      "\n    expected  : " << applyExpectedMixed[i] <<
                      "\n    calculated: " << applyCalculatedMixed[i] <<
             		 "\n    diff      : " << diffMixed);
+                     "\n    diff      : " << diffMixed);
         }
     }
 
