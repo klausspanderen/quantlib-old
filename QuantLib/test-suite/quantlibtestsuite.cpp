@@ -56,6 +56,7 @@
 #include "batesmodel.hpp"
 #include "bermudanswaption.hpp"
 #include "blackdeltacalculator.hpp"
+#include "blackformula.hpp"
 #include "bonds.hpp"
 #include "brownianbridge.hpp"
 #include "calendars.hpp"
@@ -252,7 +253,6 @@ test_suite* init_unit_test_suite(int, char* []) {
     BOOST_TEST_MESSAGE(rule);
     BOOST_TEST_MESSAGE(header);
     BOOST_TEST_MESSAGE(rule);
-
     test_suite* test = BOOST_TEST_SUITE("QuantLib test suite");
 
     test->add(QUANTLIB_TEST_CASE(startTimer));
@@ -263,10 +263,12 @@ test_suite* init_unit_test_suite(int, char* []) {
     test->add(ArrayTest::suite());
     test->add(AsianOptionTest::suite());
     test->add(AssetSwapTest::suite()); // fails with QL_USE_INDEXED_COUPON
+    test->add(AutocovariancesTest::suite());
     test->add(BarrierOptionTest::suite());
     test->add(BasketOptionTest::suite());
     test->add(BatesModelTest::suite());
     test->add(BermudanSwaptionTest::suite());
+    test->add(BlackFormulaTest::suite());
     test->add(BondTest::suite());
     test->add(BrownianBridgeTest::suite());
     test->add(CalendarTest::suite());
@@ -289,6 +291,7 @@ test_suite* init_unit_test_suite(int, char* []) {
     test->add(EuropeanOptionTest::suite());
     test->add(ExchangeRateTest::suite());
     test->add(FactorialTest::suite());
+    test->add(FastFourierTransformTest::suite());
     test->add(FdHestonTest::suite());
     test->add(FdmLinearOpTest::suite());
     test->add(ForwardOptionTest::suite());
@@ -355,7 +358,6 @@ test_suite* init_unit_test_suite(int, char* []) {
 
     // tests for experimental classes
     test->add(AsianOptionTest::experimental());
-    test->add(AutocovariancesTest::suite());
     test->add(BarrierOptionTest::experimental());
     test->add(BlackDeltaCalculatorTest::suite());
     test->add(CdoTest::suite());
@@ -367,9 +369,7 @@ test_suite* init_unit_test_suite(int, char* []) {
     test->add(EuropeanOptionTest::experimental());
     test->add(EverestOptionTest::suite());
     test->add(ExtendedTreesTest::suite());
-    test->add(FastFourierTransformTest::suite());
     test->add(FdHestonTest::experimental());
-
     test->add(HimalayaOptionTest::suite());
     test->add(InflationCPICapFloorTest::suite());
     test->add(InflationVolTest::suite());
@@ -388,6 +388,7 @@ test_suite* init_unit_test_suite(int, char* []) {
     test->add(VarianceOptionTest::suite());
     test->add(VPPTest::suite());
     test->add(WriterExtensibleOptionTest::suite());
+
     // tests for deprecated classes
     test->add(LiborMarketModelTest::suite());
     test->add(LiborMarketModelProcessTest::suite());
