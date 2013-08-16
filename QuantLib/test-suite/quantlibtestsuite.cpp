@@ -321,7 +321,10 @@ test_suite* init_unit_test_suite(int, char* []) {
     test->add(MoneyTest::suite());
     test->add(OperatorTest::suite());
     test->add(OptimizersTest::suite());
-//    test->add(OptionletStripperTest::suite());
+#ifndef QL_ENABLE_THREAD_SAFE_OBSERVER_PATTERN
+    // test runs very slow with the thread-safe observer pattern
+    test->add(OptionletStripperTest::suite());
+#endif
     test->add(OvernightIndexedSwapTest::suite());
     test->add(PathGeneratorTest::suite());
     test->add(PeriodTest::suite());
@@ -371,7 +374,10 @@ test_suite* init_unit_test_suite(int, char* []) {
     test->add(InflationCPICapFloorTest::suite());
     test->add(InflationVolTest::suite());
     test->add(MargrabeOptionTest::suite());
-//    test->add(MarkovFunctionalTest::suite());
+#ifndef QL_ENABLE_THREAD_SAFE_OBSERVER_PATTERN
+    // test runs slowly with the thread-safe observer pattern
+    test->add(MarkovFunctionalTest::suite());
+#endif
     test->add(NthToDefaultTest::suite());
     test->add(OdeTest::suite());
     test->add(PagodaOptionTest::suite());
