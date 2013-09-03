@@ -930,12 +930,7 @@ namespace {
 
 
 void FdHestonTest::testTransformedZeroFlowBC() {
-    BOOST_TEST_MESSAGE("Testing zero flow BC for transformed "
-<<<<<<< HEAD
-                  "Fokker-Planck forward equation...");
-=======
-                       "Fokker-Planck forward equation...");
->>>>>>> 535c6592b062ece0dca267e4cb0d0e09396cdc7a
+    BOOST_TEST_MESSAGE("Testing zero flow BC for transformed...");
 
     SavedSettings backup;
 
