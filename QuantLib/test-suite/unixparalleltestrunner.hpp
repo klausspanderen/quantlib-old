@@ -17,8 +17,8 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
-#ifndef quantlib_test_parallel_test_runner_hpp
-#define quantlib_test_parallel_test_runner_hpp
+#ifndef quantlib_test_unix_parallel_test_runner_hpp
+#define quantlib_test_unix_parallel_test_runner_hpp
 
 #include <ql/types.hpp>
 
@@ -166,7 +166,7 @@ int main( int argc, char* argv[] )
         s_log_impl().stream() << "Total number of test cases: "
             << tcc.numberOfTests() << std::endl;
 
-        const unsigned nProc = 2*boost::thread::hardware_concurrency();
+        const unsigned nProc = boost::thread::hardware_concurrency();
 
         message_queue::remove(testUnitIdQueueName);
         message_queue mq(create_only, testUnitIdQueueName,
